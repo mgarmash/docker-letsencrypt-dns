@@ -15,7 +15,7 @@ while true; do
 	rm -f /etc/supervisord.d/*_autocmd-containers
 
         echo "#### Registering Let's Encrypt account if needed ####"
-        certbot register -n --agree-tos -m $LETSENCRYPT_USER_MAIL $staging_cmd
+        certbot register -n --agree-tos -m $LETSENCRYPT_USER_MAIL $staging_cmd --server https://acme-v02.api.letsencrypt.org/directory
 
         echo "#### Creating missing certificates if needed (~1min for each) ####"
         while read -r entry; do
@@ -36,13 +36,14 @@ while true; do
             certbot certonly \
                 -n \
                 --manual \
-                --preferred-challenges=dns \
+                --preferred-challenges=dns-01 \
                 --manual-auth-hook /var/lib/letsencrypt/hooks/authenticator.sh \
                 --manual-cleanup-hook /var/lib/letsencrypt/hooks/cleanup.sh \
                 --manual-public-ip-logging-ok \
                 --expand \
                 --deploy-hook deploy-hook.sh \
-                $staging_cmd \
+                --server https://acme-v02.api.letsencrypt.org/directory \
+		$staging_cmd \
                 $domains_cmd
 
             if [ "$autorestart_config" != "" ]; then
@@ -78,7 +79,7 @@ while true; do
 
             if [ "$remove_domain" = true ]; then
                 echo ">>> Removing the certificate $domain"
-                certbot revoke -n $staging_cmd --cert-path /etc/letsencrypt/live/$domain/cert.pem
+                certbot revoke -n $staging_cmd --cert-path /etc/letsencrypt/live/$domain/cert.pem --server https://acme-v02.api.letsencrypt.org/directory
             fi
         done
 
